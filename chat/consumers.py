@@ -2,6 +2,7 @@
 import json
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
+from .models import Message
 
 
 class ChatConsumer(WebsocketConsumer):
@@ -24,8 +25,7 @@ class ChatConsumer(WebsocketConsumer):
         )
 
 
-# Receive method and commands
-
+# Receive method
 
     def receive(self, text_data):
         data = json.loads(text_data)
@@ -34,9 +34,12 @@ class ChatConsumer(WebsocketConsumer):
 
 # Receive message from front, save it DB (TODO) and broadcast it to all channels
 
-
     def send_chat_message(self, data):
-        print('send_chat_message')
+
+        message = Message(
+            content=data['message'], sender=data['sender'], chatgroup=data['chatgroup'])
+        message.save()
+
         async_to_sync(self.channel_layer.group_send)(
             self.room_group_name,
             {
@@ -45,15 +48,14 @@ class ChatConsumer(WebsocketConsumer):
             }
         )
 
-    # Receive message from room group
     def chat_message(self, data):
-        print('chat_message')
         message = data['data']['message']
-        print(message)
+        sender = data['data']['sender']
         self.send(text_data=json.dumps(
             [
                 {
-                    'message': message
+                    'message': message,
+                    'sender': sender
                 },
             ]
         )
@@ -63,9 +65,34 @@ class ChatConsumer(WebsocketConsumer):
 # TODO Fetch messages for preload in front
 
 
+    def messages_to_json(self, messages):
+        result = []
+        for message in messages:
+            result.append(self.message_to_json(message))
+        return result
+
+    def message_to_json(self, message):
+        return {
+            'message': message.content,
+            'sender': message.sender,
+            'chatgroup': message.chatgroup,
+            'timestamp': str(message.timestamp)
+        }
+
+    def fetch_messages(self, data):
+        chatgroup = data['chatgroup']
+        messages = Message.objects.order_by(
+            'timestamp').filter(chatgroup=chatgroup)
+
+        self.send_message(self.messages_to_json(messages))
+
+    def send_message(self, message):
+        self.send(text_data=json.dumps(message))
+
+
 # Commands dictionary
 
     commands = {
-        # 'fetch_messages': fetch_messages,
+        'fetch_messages': fetch_messages,
         'send_chat_message': send_chat_message
     }
