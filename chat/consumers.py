@@ -3,6 +3,7 @@ import json
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
 from .models import Message
+from django.contrib.auth.models import AnonymousUser
 
 
 class ChatConsumer(WebsocketConsumer):
@@ -10,22 +11,32 @@ class ChatConsumer(WebsocketConsumer):
     # Connect and disconnect methods
 
     def connect(self):
-        self.room_name = self.scope['url_route']['kwargs']['room_name']
-        self.room_group_name = 'chat_%s' % self.room_name
-        async_to_sync(self.channel_layer.group_add)(
-            self.room_group_name,
-            self.channel_name
-        )
-        self.accept()
+        print(self.scope["user"])
+
+        if (self.scope["user"] != AnonymousUser()):
+            self.room_name = self.scope['url_route']['kwargs']['room_name']
+            self.room_group_name = 'chat_%s' % self.room_name
+            async_to_sync(self.channel_layer.group_add)(
+                self.room_group_name,
+                self.channel_name
+            )
+            self.accept()
+        else:
+            self.close(code=1000)
 
     def disconnect(self, close_code):
-        async_to_sync(self.channel_layer.group_discard)(
-            self.room_group_name,
-            self.channel_name
-        )
+
+        if (self.scope["user"] != AnonymousUser()):
+            async_to_sync(self.channel_layer.group_discard)(
+                self.room_group_name,
+                self.channel_name
+            )
+        else:
+            pass
 
 
 # Receive method
+
 
     def receive(self, text_data):
         data = json.loads(text_data)
@@ -33,6 +44,7 @@ class ChatConsumer(WebsocketConsumer):
 
 
 # Receive message from front, save it DB (TODO) and broadcast it to all channels
+
 
     def send_chat_message(self, data):
 
@@ -62,8 +74,9 @@ class ChatConsumer(WebsocketConsumer):
         )
 
 
-# TODO Fetch messages for preload in front
+# Fetch messages for preload in front
 
+    # Messages serializer
 
     def messages_to_json(self, messages):
         result = []
@@ -79,6 +92,7 @@ class ChatConsumer(WebsocketConsumer):
             'timestamp': str(message.timestamp)
         }
 
+    # Fetch messages functions
     def fetch_messages(self, data):
         chatgroup = data['chatgroup']
         messages = Message.objects.order_by(
@@ -91,7 +105,6 @@ class ChatConsumer(WebsocketConsumer):
 
 
 # Commands dictionary
-
     commands = {
         'fetch_messages': fetch_messages,
         'send_chat_message': send_chat_message
