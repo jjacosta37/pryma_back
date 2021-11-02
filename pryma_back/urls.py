@@ -17,8 +17,16 @@ Including another URLconf
 from django.conf.urls import include
 from django.contrib import admin
 from django.urls import path
+from chat import views
+from rest_framework.authtoken import views as viewsRF
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('chat/', include('chat.urls')),
+
+    ######## API Views ##########
+
+    path('api/getmessages/', views.getMessages, name='getMessages'),
+    path('api-token-auth/', viewsRF.obtain_auth_token),
+
 ]
