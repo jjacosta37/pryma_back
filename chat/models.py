@@ -24,9 +24,6 @@ class Supplier(models.Model):
     contact = models.CharField(max_length=500)
     restaurant_id = models.ManyToManyField(Restaurant)
 
-    # Right now each supplier can only have one group name, which means 1 supplier could not be assigned to >1 restaurant. Got to fix this.
-    groupname = models.CharField(max_length=500)
-
 
 class UserProfile(models.Model):
 
@@ -37,7 +34,7 @@ class UserProfile(models.Model):
         Supplier, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
-        return self.name
+        return self.user.username
 
 
 class Product(models.Model):
@@ -51,17 +48,11 @@ class Product(models.Model):
         return self.name
 
 
-class ChatGroup(models.Model):
-
-    restaurant_id = models.ForeignKey(Restaurant, on_delete=models.CASCADE)
-    supplier_id = models.ForeignKey(Supplier, on_delete=models.CASCADE)
-
-
 class Message(models.Model):
 
     content = models.TextField()
+    # TODO: Sender needs to be linked to user model
     # sender = models.ForeignKey(User, on_delete=models.CASCADE)
     sender = models.CharField(max_length=100)
-    # chatGroup = models.ForeignKey(ChatGroup, on_delete=models.CASCADE)
-    chatgroup = models.CharField(max_length=100)
+    chatgroup = models.CharField(max_length=100, editable=False)
     timestamp = models.DateTimeField(auto_now_add=True)

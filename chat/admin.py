@@ -1,14 +1,13 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
-from .models import Supplier, Product, Restaurant, UserProfile, ChatGroup, Message
+from .models import Supplier, Product, Restaurant, UserProfile, Message
 
 # Register your models here.
 
 admin.site.register(Supplier)
 admin.site.register(Product)
 admin.site.register(Restaurant)
-admin.site.register(ChatGroup)
 admin.site.register(Message)
 
 

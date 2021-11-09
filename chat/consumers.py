@@ -9,11 +9,11 @@ from django.contrib.auth.models import AnonymousUser
 class ChatConsumer(WebsocketConsumer):
 
     # Connect and disconnect methods
-
     def connect(self):
-        print(self.scope["user"])
 
-        if (self.scope["user"] != AnonymousUser()):
+        # FIXME: Anonymous user allowed to connect for testing. Got to remove second conditional
+
+        if (self.scope["user"] != AnonymousUser() or self.scope["user"] == AnonymousUser()):
             self.room_name = self.scope['url_route']['kwargs']['room_name']
             self.room_group_name = 'chat_%s' % self.room_name
             async_to_sync(self.channel_layer.group_add)(
@@ -37,14 +37,12 @@ class ChatConsumer(WebsocketConsumer):
 
 # Receive method
 
-
     def receive(self, text_data):
         data = json.loads(text_data)
         self.commands[data['command']](self, data)
 
 
-# Receive message from front, save it DB (TODO) and broadcast it to all channels
-
+# Receive message from front, save it DB and broadcast it to all channels
 
     def send_chat_message(self, data):
 
@@ -75,7 +73,6 @@ class ChatConsumer(WebsocketConsumer):
 
 
 # Fetch messages for preload in front
-
     # Messages serializer
 
     def messages_to_json(self, messages):

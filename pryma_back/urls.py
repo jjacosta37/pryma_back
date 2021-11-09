@@ -28,5 +28,7 @@ urlpatterns = [
 
     path('api/getmessages/', views.getMessages, name='getMessages'),
     path('api-token-auth/', viewsRF.obtain_auth_token),
+    path('api/getsuppliers/', views.getSupplierScreenInfo, name='getSuppliers'),
+
 
 ]
